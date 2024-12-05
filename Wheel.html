@@ -39,36 +39,77 @@
 </head>
 <body>
     <h1>Spin the Wheel!</h1>
-    <canvas id="wheelCanvas" width="500" height="500"></canvas>
+    <canvas id="wheelCanvas" width="700" height="700"></canvas>
     <div id="result"></div>
     <button id="spinButton">Spin!</button>
     <button id="resetButton">Reset Wheel</button>
 
+    <!-- Use custom spinning sound -->
+    <audio id="spinSound" src="Spinning_Wheel_Sound_Effect_[_YouConvert.net_].mp3"></audio>
+
     <script>
         const originalOptions = [
-            "Option 1", "Option 2", "Option 3", "Option 4", "Option 5",
-            "Option 6", "Option 7", "Option 8", "Option 9", "Option 10",
-            "Option 11", "Option 12", "Option 13", "Option 14", "Option 15",
-            "Option 16", "Option 17", "Option 18", "Option 19", "Option 20"
+            { name: "Zombie", weight: 6 },
+            { name: "Ironic", weight: 6 },
+            { name: "Red Wine Supernova", weight: 6 },
+            { name: "Semi-Charmed Life", weight: 6 },
+            { name: "Bitch", weight: 5 },
+            { name: "The Good Life", weight: 6 },
+            { name: "Black Sheep", weight: 5 },
+            { name: "Buddy Holly", weight: 6 },
+            { name: "Celebrity Skin", weight: 6 },
+            { name: "You Oughta Know", weight: 3 },
+            { name: "Learn to Fly", weight: 6 },
+            { name: "Teenage Dirtbag", weight: 3 },
+            { name: "Bring Me to Life", weight: 3 },
+            { name: "Friday I'm in Love", weight: 3 },
+            { name: "Sex on Fire", weight: 2 },
+            { name: "Ballad of a Homeschooled Girl", weight: 3 },
+            { name: "Brick by Boring Brick", weight: 3 },
+            { name: "After the Earthquake", weight: 3 },
+            { name: "What's Up", weight: 3 },
+            { name: "Take it Easy", weight: 2 },
+            { name: "When You Were Young", weight: 2 },
+            { name: "Photograph", weight: 2 },
+            { name: "Billie Jean", weight: 2 },
+            { name: "Band Shots", weight: 2 },
+            { name: "Band Shots", weight: 2 },
+            { name: "Band Shots", weight: 2 },
+            { name: "Band Shots", weight: 2 }
         ];
 
-        let options = [...originalOptions]; // Copy original options
-        const probabilities = Array(options.length).fill(1 / options.length); // Equal probabilities
+        const bandShots = originalOptions.filter(option => option.name === "Band Shots");
+        const nonBandShots = originalOptions.filter(option => option.name !== "Band Shots");
+        const totalSegments = originalOptions.length;
+        const interval = Math.floor(totalSegments / bandShots.length);
+
+        const interspersedOptions = [];
+        let bandIndex = 0, nonBandIndex = 0;
+        for (let i = 0; i < totalSegments; i++) {
+            if (i % interval === 0 && bandIndex < bandShots.length) {
+                interspersedOptions.push(bandShots[bandIndex++]);
+            } else if (nonBandIndex < nonBandShots.length) {
+                interspersedOptions.push(nonBandShots[nonBandIndex++]);
+            }
+        }
+
+        let options = [...interspersedOptions];
 
         const canvas = document.getElementById("wheelCanvas");
         const ctx = canvas.getContext("2d");
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const radius = 200;
+        const radius = 300;
 
         let currentAngle = 0;
         let spinTimeout = null;
         let spinAngleStart = 0;
         let spinTime = 0;
-        let spinTimeTotal = 0;
-        let currentResult = null; // Track the current result
+        let spinTimeTotal = 8000; // Increased the spin duration by 4 seconds (8000ms)
+        let currentResult = null;
 
-        // Colors for segments
+        const spinSound = document.getElementById("spinSound");
+
         const colors = [
             "#FF6347", "#FFD700", "#32CD32", "#1E90FF", "#FF1493",
             "#8A2BE2", "#FF4500", "#00CED1", "#2E8B57", "#FF69B4",
@@ -76,39 +117,34 @@
             "#7B68EE", "#FFD700", "#98FB98", "#D8BFD8", "#FF4500"
         ];
 
-        // Draw the wheel
         const drawWheel = () => {
-            const totalSegments = options.length;
-            const arc = 2 * Math.PI / totalSegments;
-
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw the segments
-            for (let i = 0; i < totalSegments; i++) {
-                const startAngle = currentAngle + i * arc;
+            const arc = 2 * Math.PI / options.length;
+
+            options.forEach((option, index) => {
+                const startAngle = currentAngle + index * arc;
                 const endAngle = startAngle + arc;
 
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
                 ctx.closePath();
-                ctx.fillStyle = colors[i % colors.length]; // Cycle through colors
+                ctx.fillStyle = colors[index % colors.length];
                 ctx.fill();
                 ctx.strokeStyle = "black";
                 ctx.stroke();
 
-                // Add text
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 ctx.rotate(startAngle + arc / 2);
                 ctx.textAlign = "right";
                 ctx.fillStyle = "white";
                 ctx.font = "16px Arial";
-                ctx.fillText(options[i], radius - 10, 5);
+                ctx.fillText(option.name, radius - 10, 5);
                 ctx.restore();
-            }
+            });
 
-            // Draw the marker
             ctx.fillStyle = "red";
             ctx.beginPath();
             ctx.moveTo(centerX - 10, centerY - radius - 20);
@@ -118,7 +154,6 @@
             ctx.fill();
         };
 
-        // Start the rotation of the wheel
         const rotateWheel = () => {
             spinTime += 30;
 
@@ -134,57 +169,52 @@
             spinTimeout = setTimeout(rotateWheel, 30);
         };
 
-        // Stop rotation and show result
         const stopRotateWheel = () => {
             clearTimeout(spinTimeout);
-
-            const totalSegments = options.length;
-            const arc = 2 * Math.PI / totalSegments;
+            const arc = 2 * Math.PI / options.length;
             const degrees = (currentAngle * 180 / Math.PI) + 90;
             const adjustedAngle = (360 - degrees % 360) % 360;
-            const segmentIndex = Math.floor(adjustedAngle / (360 / totalSegments));
+            const segmentIndex = Math.floor(adjustedAngle / (360 / options.length));
             const result = options[segmentIndex];
 
-            document.getElementById("result").textContent = `The wheel landed on: ${result}`;
-
-            // Store the result but don't remove it until next spin
+            document.getElementById("result").textContent = `The wheel landed on: ${result.name}`;
             currentResult = result;
-
-            // Redraw the wheel with the same options
             drawWheel();
         };
 
-        // Spin button click event
         document.getElementById("spinButton").addEventListener("click", () => {
-            if (options.length === 0) {
-                return; // Do nothing if all options have been used
-            }
-
-            // If there is a previous result, remove it only when the user clicks Spin again
             if (currentResult) {
-                const index = options.indexOf(currentResult);
+                const index = options.findIndex(option => option === currentResult);
                 if (index > -1) {
-                    options.splice(index, 1); // Remove the previous result from options
+                    options.splice(index, 1);
                 }
-                currentResult = null; // Reset the current result
+                currentResult = null;
             }
 
-            spinAngleStart = Math.random() * 10 + 10; // Random spin speed
+            // Disable the spin button and reset audio
+            document.getElementById("spinButton").disabled = true;
+            spinSound.currentTime = 2;  // Skip first 2 seconds
+            spinSound.play();
+
+            spinAngleStart = Math.random() * 10 + 10;
             spinTime = 0;
-            spinTimeTotal = Math.random() * 3000 + 3000; // Spin duration
             rotateWheel();
         });
 
-        // Reset button click event
-        document.getElementById("resetButton").addEventListener("click", () => {
-            options = [...originalOptions]; // Restore all options
-            document.getElementById("spinButton").disabled = false; // Enable the spin button
-            document.getElementById("result").textContent = ""; // Clear result
-            drawWheel(); // Redraw the full wheel
+        spinSound.addEventListener('ended', () => {
+            // Re-enable the spin button when the sound ends
+            document.getElementById("spinButton").disabled = false;
         });
 
-        // Draw the initial wheel
+        document.getElementById("resetButton").addEventListener("click", () => {
+            options = [...interspersedOptions];
+            currentResult = null;
+            document.getElementById("result").textContent = "";
+            drawWheel();
+        });
+
         drawWheel();
     </script>
 </body>
 </html>
+
