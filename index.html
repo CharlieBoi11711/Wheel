@@ -110,12 +110,18 @@
 
         const spinSound = document.getElementById("spinSound");
 
+        // Define the colors and assign them consistently
         const colors = [
             "#FF6347", "#FFD700", "#32CD32", "#1E90FF", "#FF1493",
             "#8A2BE2", "#FF4500", "#00CED1", "#2E8B57", "#FF69B4",
             "#D2691E", "#DC143C", "#FF8C00", "#4682B4", "#9ACD32",
             "#7B68EE", "#FFD700", "#98FB98", "#D8BFD8", "#FF4500"
         ];
+
+        // Assign colors to each option
+        options.forEach((option, index) => {
+            option.color = colors[index % colors.length];
+        });
 
         const drawWheel = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -130,7 +136,7 @@
                 ctx.moveTo(centerX, centerY);
                 ctx.arc(centerX, centerY, radius, startAngle, endAngle);
                 ctx.closePath();
-                ctx.fillStyle = colors[index % colors.length];
+                ctx.fillStyle = option.color; // Use pre-assigned color
                 ctx.fill();
                 ctx.strokeStyle = "black";
                 ctx.stroke();
